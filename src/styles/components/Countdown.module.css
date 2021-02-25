@@ -55,6 +55,20 @@
 
 }
 
-.startButton:hover{
+.startButton:not(:disabled):hover{
     background: var(--blue-dark);
+}
+.startButton:disabled{
+    background: var(--white);
+    color: var(--text);
+    cursor: not-allowed;
+}
+
+.startButtonActive{
+    background: var(--white);
+    color: var(--title);
+}
+.startButtonActive:hover{
+    background: var(--red);
+    color: var(--white);
 }
