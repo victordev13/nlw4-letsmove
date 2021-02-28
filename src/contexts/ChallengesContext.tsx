@@ -1,5 +1,8 @@
 import { createContext, useState, ReactNode, useEffect } from 'react';
 import challenges from '../challenges.json';
+import Cookies from 'js-cookie';
+import { LevelUpModal } from '../components/LevelUpModal';
+
 export const ChallengesContext = createContext({} as ChallengesContextData);
 
 interface Challenge {
@@ -18,53 +21,46 @@ interface ChallengesContextData {
     activeChallenge: Challenge;
     resetChallenge: () => void;
     completeChallenge: () => void;
+    closeLevelUpModal: () => void
 }
 
 interface ChallengesProviderProps {
     children: ReactNode;
+    level: number, 
+    currentExperience: number, 
+    challengesCompleted: number;
 }
 
-export function ChallengesProvider({ children }: ChallengesProviderProps) {
-    const [level, setLevel] = useState(1);
-    const [currentExperience, setCurrentExperience] = useState(0);
-    const [challengesCompleted, setChallengesCompleted] = useState(0);
+export function ChallengesProvider({ 
+    children, 
+    ...rest 
+}: ChallengesProviderProps) {
+    const [level, setLevel] = useState(rest.level ?? 1);
+    const [currentExperience, setCurrentExperience] = useState(rest.currentExperience ?? 0);
+    const [challengesCompleted, setChallengesCompleted] = useState(rest.challengesCompleted ?? 0);
     const [activeChallenge, setActiveChallenge] = useState(null);
+    const[isLevelUpModal, setIsLevelUpModal] = useState(false);
 
     const experienceToNextLevel = Math.pow((level + 1) * 4, 2);
 
-    useEffect(() => {
-        Notification.requestPermission();
-        const storageLevel = localStorage.getItem('@level');
-        const storageExperience = localStorage.getItem('@experience');
-        const storageChallengesCompleted = localStorage.getItem(
-            '@challengesCompleted'
-        );
-
-        if (storageLevel !== null && storageExperience !== null) {
-            setLevel(Number(storageLevel));
-            setCurrentExperience(Number(storageExperience));
-            setChallengesCompleted(Number(storageChallengesCompleted));
-        }
-    }, []);
-
-    useEffect(() => {
-        console.log('saving');
-        saveToStorage();
-    }, [currentExperience]);
-
     function levelUp() {
         setLevel(level + 1);
+        setIsLevelUpModal(true);
     }
 
-    function saveToStorage() {
-        localStorage.setItem('@level', String(level));
-        localStorage.setItem('@experience', String(currentExperience));
-        localStorage.setItem(
-            '@challengesCompleted',
-            String(challengesCompleted)
-        );
+    function closeLevelUpModal(){
+        setIsLevelUpModal(false);
     }
- 
+
+    useEffect(()  =>  {},  []);
+    
+    useEffect(()  =>  {
+        Cookies.set('level',String(level));
+        Cookies.set('currentExperience',String(currentExperience));
+        Cookies.set('challengesCompleted',String(challengesCompleted));
+    },  [level, currentExperience, challengesCompleted]);
+    
+
     function startNewChallenge() {
         const randomChallengeIndex = Math.floor(
             Math.random() * challenges.length
@@ -85,6 +81,7 @@ export function ChallengesProvider({ children }: ChallengesProviderProps) {
     function resetChallenge() {
         setActiveChallenge(null);
     }
+    
 
     function completeChallenge() {
         if (!activeChallenge) {
@@ -103,10 +100,7 @@ export function ChallengesProvider({ children }: ChallengesProviderProps) {
         setCurrentExperience(finalExperience);
         console.log(currentExperience);
         setActiveChallenge(null);
-        setChallengesCompleted(challengesCompleted + 1);
-
-        saveToStorage();
-    }
+        setChallengesCompleted(challengesCompleted + 1);    }
 
     return (
         <ChallengesContext.Provider
@@ -120,8 +114,12 @@ export function ChallengesProvider({ children }: ChallengesProviderProps) {
                 activeChallenge,
                 resetChallenge,
                 completeChallenge,
+                closeLevelUpModal
             }}>
             {children}
+            {isLevelUpModal &&(
+                <LevelUpModal/>
+            )}
         </ChallengesContext.Provider>
     );
 }
